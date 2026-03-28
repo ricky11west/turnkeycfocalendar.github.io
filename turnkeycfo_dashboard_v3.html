@@ -1,0 +1,1957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TurnkeyCFO — Operations Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════
+   MAVS PALETTE + TOKENS
+═══════════════════════════════════════════════════ */
+:root {
+  /* Dallas Mavericks Official */
+  --mavs-royal:   #00538C;
+  --mavs-navy:    #002B5E;
+  --mavs-silver:  #B8C4CA;
+  --mavs-white:   #FFFFFF;
+
+  /* Extended palette */
+  --royal-dark:   #003f6b;
+  --royal-mid:    #00538C;
+  --royal-light:  #0a6baa;
+  --royal-pale:   #cce3f4;
+  --royal-ghost:  #e8f4fc;
+  --royal-ultra:  #f0f8ff;
+
+  --navy-deep:    #001a3d;
+  --navy-mid:     #002B5E;
+  --navy-muted:   #003878;
+
+  --silver-dark:  #8a9aa4;
+  --silver-mid:   #B8C4CA;
+  --silver-light: #d8e2e8;
+  --silver-pale:  #eef2f5;
+  --silver-ultra: #f6f8fa;
+
+  /* Semantic */
+  --bg-page:      #f2f6fa;
+  --bg-surface:   #ffffff;
+  --bg-raised:    #f8fafc;
+  --bg-overlay:   rgba(0,83,140,0.04);
+
+  --text-primary:   #001a3d;
+  --text-secondary: #2c4a6e;
+  --text-muted:     #6b8aaa;
+  --text-light:     #9ab0c8;
+
+  --border-light: rgba(0,83,140,0.10);
+  --border-mid:   rgba(0,83,140,0.18);
+  --border-strong:#B8C4CA;
+
+  /* Status colors */
+  --green:  #0d9668;  --green-bg:  #e6f7f2;  --green-border: #a7e3d4;
+  --yellow: #c47f00;  --yellow-bg: #fef8e6;  --yellow-border:#f5d98a;
+  --red:    #c0392b;  --red-bg:    #fdf0ee;  --red-border:   #f5b7b1;
+  --blue:   #00538C;  --blue-bg:   #e8f4fc;  --blue-border:  #99ccee;
+  --purple: #6a3db8;  --purple-bg: #f3edfb;  --purple-border:#c9aaee;
+  --teal:   #0891b2;  --teal-bg:   #e6f7fb;  --teal-border:  #a5daea;
+
+  --shadow-xs: 0 1px 3px rgba(0,43,94,0.06);
+  --shadow-sm: 0 2px 8px rgba(0,43,94,0.08), 0 1px 3px rgba(0,43,94,0.05);
+  --shadow-md: 0 4px 20px rgba(0,43,94,0.10), 0 2px 6px rgba(0,43,94,0.06);
+  --shadow-lg: 0 8px 40px rgba(0,43,94,0.14), 0 2px 8px rgba(0,43,94,0.07);
+  --shadow-xl: 0 16px 60px rgba(0,43,94,0.16), 0 4px 12px rgba(0,43,94,0.08);
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  --font-head: 'Sora', system-ui, sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+
+  --transition: 0.18s cubic-bezier(0.4,0,0.2,1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-page);
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ═══════════════════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════════════════ */
+.sidebar {
+  position: fixed;
+  left: 0; top: 0; bottom: 0;
+  width: 240px;
+  background: var(--mavs-navy);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  box-shadow: 4px 0 24px rgba(0,43,94,0.25);
+}
+
+/* Subtle diagonal texture on sidebar */
+.sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    135deg,
+    transparent 0px,
+    transparent 40px,
+    rgba(255,255,255,0.018) 40px,
+    rgba(255,255,255,0.018) 41px
+  );
+  pointer-events: none;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.logo-gem {
+  width: 38px; height: 38px;
+  background: linear-gradient(135deg, var(--mavs-royal) 0%, #0071bc 100%);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-head);
+  font-size: 15px; font-weight: 800;
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(0,83,140,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
+  flex-shrink: 0;
+}
+
+.logo-words { display: flex; flex-direction: column; }
+.logo-brand {
+  font-family: var(--font-head);
+  font-size: 13.5px; font-weight: 700;
+  color: #fff; line-height: 1.1;
+  letter-spacing: -0.2px;
+}
+.logo-tagline {
+  font-size: 9.5px; font-weight: 500;
+  letter-spacing: 1.8px; text-transform: uppercase;
+  color: rgba(184,196,202,0.7);
+  margin-top: 2px;
+}
+
+/* Person filter */
+.sidebar-section-label {
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: rgba(184,196,202,0.5);
+  padding: 20px 20px 8px;
+  flex-shrink: 0;
+}
+
+.person-list { padding: 0 10px; flex-shrink: 0; }
+
+.person-btn {
+  display: flex; align-items: center;
+  gap: 10px; width: 100%;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  border: none; background: transparent;
+  cursor: pointer;
+  transition: var(--transition);
+  margin-bottom: 2px;
+  position: relative;
+}
+
+.person-btn:hover { background: rgba(255,255,255,0.07); }
+
+.person-btn.active {
+  background: rgba(0,83,140,0.55);
+  box-shadow: 0 2px 12px rgba(0,83,140,0.4);
+}
+
+.person-btn.active::before {
+  content: '';
+  position: absolute; left: 0; top: 20%; bottom: 20%;
+  width: 3px; border-radius: 0 3px 3px 0;
+  background: #fff;
+}
+
+.p-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+
+.pa-all     { background: linear-gradient(135deg,#00538C,#0071bc); color:#fff; }
+.pa-ricky   { background: linear-gradient(135deg,#c47f00,#e09500); color:#fff; }
+.pa-hardik  { background: linear-gradient(135deg,#00538C,#0071bc); color:#fff; }
+.pa-eldine  { background: linear-gradient(135deg,#0d9668,#10b87e); color:#fff; }
+.pa-nik     { background: linear-gradient(135deg,#6a3db8,#7f52cc); color:#fff; }
+.pa-events  { background: linear-gradient(135deg,#c0392b,#e04535); color:#fff; }
+
+.p-name {
+  font-size: 13px; font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  text-align: left; flex: 1;
+}
+.person-btn.active .p-name { color: #fff; }
+
+.p-badge {
+  font-size: 10px; font-weight: 700;
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.6);
+  padding: 1px 6px; border-radius: var(--radius-full);
+}
+.person-btn.active .p-badge {
+  background: rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.9);
+}
+
+/* View toggle */
+.sidebar-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.07);
+  margin: 16px 20px 0;
+  flex-shrink: 0;
+}
+
+.view-list { padding: 8px 10px 0; flex-shrink: 0; }
+
+.view-btn {
+  display: flex; align-items: center;
+  gap: 10px; width: 100%;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  border: none; background: transparent;
+  cursor: pointer;
+  transition: var(--transition);
+  margin-bottom: 2px;
+  color: rgba(255,255,255,0.6);
+  font-family: var(--font-body);
+  font-size: 13px; font-weight: 500;
+}
+
+.view-btn:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); }
+
+.view-btn.active {
+  background: rgba(0,83,140,0.55);
+  color: #fff;
+  font-weight: 600;
+}
+
+.view-icon { font-size: 14px; width: 18px; text-align: center; }
+
+/* Sidebar footer */
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+}
+
+.live-indicator {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 10.5px; color: rgba(184,196,202,0.6);
+}
+.live-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: blink 2s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ═══════════════════════════════════════════════════
+   MAIN CONTENT
+═══════════════════════════════════════════════════ */
+.main {
+  margin-left: 240px;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+}
+
+/* Top bar */
+.topbar {
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-light);
+  padding: 0 32px;
+  height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 50;
+  box-shadow: var(--shadow-xs);
+  flex-shrink: 0;
+}
+
+.topbar-left { display: flex; flex-direction: column; gap: 2px; }
+
+.topbar-title {
+  font-family: var(--font-head);
+  font-size: 16px; font-weight: 700;
+  color: var(--text-primary);
+}
+
+.topbar-subtitle { font-size: 11.5px; color: var(--text-muted); }
+
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+
+.topbar-date {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--silver-pale);
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-light);
+}
+
+.topbar-view-toggle {
+  display: flex;
+  background: var(--silver-pale);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  gap: 2px;
+}
+
+.tv-btn {
+  padding: 5px 13px;
+  border-radius: var(--radius-xs);
+  border: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 12px; font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.tv-btn:hover { color: var(--text-primary); }
+.tv-btn.active {
+  background: var(--bg-surface);
+  color: var(--mavs-royal);
+  box-shadow: var(--shadow-xs);
+}
+
+/* Content area */
+.content { flex: 1; padding: 28px 32px 48px; }
+
+/* ═══════════════════════════════════════════════════
+   HERO STATS
+═══════════════════════════════════════════════════ */
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.stat-chip {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+.stat-chip:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+
+.stat-chip::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.sc-royal::before { background: linear-gradient(90deg,var(--mavs-royal),var(--royal-light)); }
+.sc-navy::before  { background: linear-gradient(90deg,var(--mavs-navy),var(--navy-muted)); }
+.sc-green::before { background: linear-gradient(90deg,var(--green),#12b080); }
+.sc-red::before   { background: linear-gradient(90deg,var(--red),#e04535); }
+
+.sc-icon { font-size: 22px; margin-bottom: 8px; }
+.sc-value {
+  font-family: var(--font-head);
+  font-size: 30px; font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.sc-label { font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); }
+.sc-sub { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+
+/* ═══════════════════════════════════════════════════
+   ALERT BANNERS
+═══════════════════════════════════════════════════ */
+.alert-container { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+
+.alert-bar {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  border-left: 4px solid;
+  animation: slideIn .3s ease;
+}
+.alert-bar.red    { background:var(--red-bg);    border-left-color:var(--red);    border:1px solid var(--red-border); border-left:4px solid var(--red); }
+.alert-bar.yellow { background:var(--yellow-bg); border-left-color:var(--yellow); border:1px solid var(--yellow-border); border-left:4px solid var(--yellow); }
+.alert-bar.green  { background:var(--green-bg);  border-left-color:var(--green);  border:1px solid var(--green-border); border-left:4px solid var(--green); }
+
+.alert-icon { font-size: 16px; flex-shrink:0; margin-top:1px; }
+.alert-content { flex:1; }
+.alert-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing:.5px; margin-bottom:2px; }
+.alert-bar.red    .alert-title { color:var(--red); }
+.alert-bar.yellow .alert-title { color:var(--yellow); }
+.alert-bar.green  .alert-title { color:var(--green); }
+.alert-body { font-size: 12.5px; color: var(--text-secondary); line-height:1.5; }
+
+@keyframes slideIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:none} }
+
+/* ═══════════════════════════════════════════════════
+   SECTION HEADER
+═══════════════════════════════════════════════════ */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px; flex-wrap: wrap; gap: 10px;
+}
+
+.section-title {
+  font-family: var(--font-head);
+  font-size: 18px; font-weight: 700;
+  color: var(--text-primary);
+  display: flex; align-items: center; gap: 10px;
+}
+
+.section-pill {
+  font-size: 11px; font-weight: 700;
+  background: var(--royal-ghost);
+  color: var(--mavs-royal);
+  border: 1px solid var(--royal-pale);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+}
+
+/* ═══════════════════════════════════════════════════
+   MONTH VIEW — CALENDAR GRID
+═══════════════════════════════════════════════════ */
+.month-nav {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 20px;
+}
+
+.mnav-btn {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: var(--transition);
+  box-shadow: var(--shadow-xs);
+}
+.mnav-btn:hover { background: var(--royal-ghost); border-color: var(--royal-pale); color: var(--mavs-royal); }
+
+.mnav-label {
+  font-family: var(--font-head);
+  font-size: 16px; font-weight: 700;
+  color: var(--text-primary);
+  min-width: 160px; text-align: center;
+}
+
+.cal-grid-wrap {
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.cal-dow-row {
+  display: grid; grid-template-columns: repeat(7,1fr);
+  background: var(--mavs-navy);
+}
+
+.cal-dow {
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
+}
+.cal-dow.weekday { color: rgba(255,255,255,0.9); }
+
+.cal-weeks { display: flex; flex-direction: column; }
+
+.cal-week {
+  display: grid; grid-template-columns: repeat(7,1fr);
+  border-bottom: 1px solid var(--border-light);
+}
+.cal-week:last-child { border-bottom: none; }
+
+.cal-cell {
+  min-height: 110px;
+  padding: 8px 9px;
+  border-right: 1px solid var(--border-light);
+  position: relative;
+  vertical-align: top;
+  transition: background var(--transition);
+  cursor: pointer;
+}
+.cal-cell:last-child { border-right: none; }
+.cal-cell.outside  { background: var(--silver-ultra); }
+.cal-cell.weekend  { background: #fafbfd; }
+.cal-cell.us-hol   { background: #fff5f4; }
+.cal-cell.today    { background: var(--royal-ultra); }
+.cal-cell.has-tasks:hover { background: var(--royal-ghost); }
+
+.cal-cell.has-payroll-urgent { background: #fff8f7; }
+.cal-cell.has-payroll-yellow { background: #fffcf0; }
+.cal-cell.has-payroll-green  { background: #f4fdf8; }
+.cal-cell.has-milestone      { background: #f5f0fd; }
+
+.cell-num {
+  font-family: var(--font-head);
+  font-size: 13px; font-weight: 700;
+  color: var(--text-muted);
+  line-height: 1; margin-bottom: 5px;
+  display: flex; align-items: center; gap: 5px;
+}
+.cal-cell.outside .cell-num { color: var(--text-light); }
+.cal-cell.today .cell-num { color: var(--mavs-royal); }
+.cal-cell.weekend .cell-num { color: var(--silver-dark); }
+
+.cell-bd {
+  display: inline-block;
+  font-size: 8.5px; font-weight: 700;
+  background: var(--mavs-royal);
+  color: #fff;
+  padding: 1px 5px; border-radius: 3px;
+  letter-spacing: 0.3px;
+}
+
+.cell-chips { display: flex; flex-direction: column; gap: 3px; }
+
+.cell-chip {
+  display: flex; align-items: flex-start; gap: 4px;
+  font-size: 10.5px; font-weight: 500;
+  padding: 3px 5px;
+  border-radius: 5px;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: filter var(--transition);
+}
+.cell-chip:hover { filter: brightness(0.95); }
+
+.chip-icon { flex-shrink: 0; font-size: 10px; margin-top: 0.5px; }
+.chip-text { flex: 1; min-width: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+/* Chip themes */
+.chip-payroll-red    { background:#fde8e6; color:#9b2516; }
+.chip-payroll-yellow { background:#fef7e0; color:#8a5800; }
+.chip-payroll-green  { background:#e6f7ef; color:#076041; }
+.chip-milestone      { background:#ede8fb; color:#4a2590; }
+.chip-heirloom       { background:#e6f2fa; color:#003f6b; }
+.chip-harbor         { background:#e8f5ee; color:#075730; }
+.chip-general        { background:#eef2f8; color:#2c4a6e; }
+.chip-eldine         { background:#fef7e8; color:#7a5000; }
+.chip-nik            { background:#f3edfb; color:#4a2590; }
+.chip-close          { background:#fff0ed; color:#8a2c1a; }
+.chip-us-hol         { background:#fde8e6; color:#9b2516; font-style:italic; }
+
+.cell-more {
+  font-size: 9.5px; font-weight: 600;
+  color: var(--mavs-royal);
+  margin-top: 3px;
+  padding: 2px 4px;
+}
+
+/* ═══════════════════════════════════════════════════
+   WEEK VIEW
+═══════════════════════════════════════════════════ */
+.week-nav {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+}
+
+.week-day-cols {
+  display: grid;
+  grid-template-columns: repeat(5,1fr);
+  gap: 12px;
+}
+
+.week-col {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+.week-col:hover { box-shadow: var(--shadow-md); }
+.week-col.today-col { border-color: var(--mavs-royal); box-shadow: 0 0 0 2px rgba(0,83,140,0.15), var(--shadow-sm); }
+.week-col.has-payroll-urgent { border-top: 3px solid var(--red); }
+.week-col.has-payroll-yellow { border-top: 3px solid var(--yellow); }
+.week-col.has-payroll-green  { border-top: 3px solid var(--green); }
+.week-col.milestone-col      { border-top: 3px solid #6a3db8; }
+
+.wcol-head {
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--silver-ultra);
+}
+.wcol-head.today-head { background: var(--royal-ghost); }
+
+.wcol-dow {
+  font-size: 9.5px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--text-muted); margin-bottom: 2px;
+}
+.wcol-head.today-head .wcol-dow { color: var(--mavs-royal); }
+
+.wcol-date {
+  font-family: var(--font-head);
+  font-size: 22px; font-weight: 800;
+  color: var(--text-primary); line-height: 1;
+}
+.wcol-head.today-head .wcol-date { color: var(--mavs-royal); }
+
+.wcol-bd {
+  display: inline-block; margin-top: 5px;
+  font-size: 9px; font-weight: 700;
+  background: var(--mavs-navy); color: #fff;
+  padding: 2px 7px; border-radius: var(--radius-full);
+}
+
+.wcol-body { padding: 10px 10px 12px; display: flex; flex-direction: column; gap: 7px; }
+
+.week-task {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  transition: var(--transition);
+  cursor: pointer;
+}
+.week-task:hover { transform: translateX(2px); }
+
+/* Week task priorities */
+.wt-urgent { background:var(--red-bg);    border-color:var(--red-border); }
+.wt-high   { background:var(--yellow-bg); border-color:var(--yellow-border); }
+.wt-info   { background:var(--blue-bg);   border-color:var(--blue-border); }
+.wt-gold   { background:#fffaec;          border-color:#f5e0a0; }
+.wt-purple { background:var(--purple-bg); border-color:var(--purple-border); }
+.wt-green  { background:var(--green-bg);  border-color:var(--green-border); }
+.wt-normal { background:var(--silver-pale); border-color:var(--border-light); }
+
+.wt-icon { font-size: 14px; flex-shrink:0; margin-top:1px; }
+.wt-content { flex:1; min-width:0; }
+.wt-label { font-size: 11.5px; font-weight: 600; color:var(--text-primary); line-height:1.35; margin-bottom:2px; }
+.wt-who   { font-size: 10px; font-weight: 600; color:var(--text-muted); }
+.wt-tags  { display:flex; flex-wrap:wrap; gap:3px; margin-top:4px; }
+
+/* ═══════════════════════════════════════════════════
+   DAY VIEW
+═══════════════════════════════════════════════════ */
+.day-nav {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 20px;
+}
+
+.day-strip {
+  display: flex; gap: 8px; flex: 1; flex-wrap: wrap;
+}
+
+.day-pill {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  background: var(--bg-surface);
+  cursor: pointer; transition: var(--transition);
+  min-width: 70px;
+  box-shadow: var(--shadow-xs);
+}
+.day-pill:hover { border-color: var(--royal-pale); background: var(--royal-ghost); }
+.day-pill.active {
+  background: var(--mavs-navy);
+  border-color: var(--mavs-navy);
+  box-shadow: var(--shadow-md);
+}
+
+.dp-dow  { font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--text-muted); }
+.dp-num  { font-family:var(--font-head); font-size:20px; font-weight:800; color:var(--text-primary); line-height:1; }
+.dp-mon  { font-size:9px; font-weight:500; color:var(--text-light); text-transform:uppercase; letter-spacing:1px; }
+.day-pill.active .dp-dow,
+.day-pill.active .dp-mon { color: rgba(255,255,255,0.55); }
+.day-pill.active .dp-num { color:#fff; }
+
+.dp-badge {
+  margin-top: 5px;
+  font-size: 8.5px; font-weight: 700;
+  padding: 1.5px 6px; border-radius: var(--radius-full);
+  text-transform: uppercase; letter-spacing: .5px;
+}
+.dpb-payroll { background:rgba(192,57,43,.12); color:var(--red); }
+.dpb-mile    { background:rgba(106,61,184,.12); color:var(--purple); }
+.dpb-bd      { background:rgba(0,83,140,.1); color:var(--mavs-royal); }
+.day-pill.active .dp-badge { background:rgba(255,255,255,.15); color:#fff; }
+
+/* Day detail view */
+.day-detail-header {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.ddh-left {}
+.ddh-title {
+  font-family: var(--font-head);
+  font-size: 22px; font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -.3px;
+}
+.ddh-sub { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+
+.ddh-right { display:flex; gap:8px; flex-wrap:wrap; }
+.ddh-pill {
+  font-size: 11.5px; font-weight: 600;
+  padding: 5px 13px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  background: var(--silver-pale);
+}
+
+/* Person columns in day view */
+.day-person-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px,1fr));
+  gap: 16px;
+}
+
+.person-col {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+.person-col:hover { box-shadow: var(--shadow-md); }
+
+.pcol-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-light);
+  position: relative; overflow: hidden;
+}
+
+.pcol-head::after {
+  content: '';
+  position: absolute; inset: 0;
+  opacity: .04;
+  pointer-events: none;
+}
+
+.pcol-head.ph-ricky::after  { background:linear-gradient(135deg,#c47f00,transparent 70%); }
+.pcol-head.ph-hardik::after { background:linear-gradient(135deg,#00538C,transparent 70%); }
+.pcol-head.ph-eldine::after { background:linear-gradient(135deg,#0d9668,transparent 70%); }
+.pcol-head.ph-nik::after    { background:linear-gradient(135deg,#6a3db8,transparent 70%); }
+.pcol-head.ph-events::after { background:linear-gradient(135deg,#c0392b,transparent 70%); }
+
+.pcol-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700;
+  flex-shrink: 0;
+}
+
+.pca-ricky   { background:linear-gradient(135deg,#c47f00,#e09500); color:#fff; }
+.pca-hardik  { background:linear-gradient(135deg,#00538C,#0071bc); color:#fff; }
+.pca-eldine  { background:linear-gradient(135deg,#0d9668,#10b87e); color:#fff; }
+.pca-nik     { background:linear-gradient(135deg,#6a3db8,#7f52cc); color:#fff; }
+.pca-events  { background:linear-gradient(135deg,#c0392b,#e04535); color:#fff; }
+
+.pcol-info { flex:1; }
+.pcol-name { font-size:14px; font-weight:700; color:var(--text-primary); }
+.pcol-role { font-size:10.5px; color:var(--text-muted); margin-top:1px; }
+
+.pcol-count {
+  font-size: 11px; font-weight: 700;
+  background: var(--silver-pale);
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
+  padding: 2px 8px; border-radius: var(--radius-full);
+}
+
+.pcol-body { padding: 12px 14px 16px; }
+
+.task-list { display: flex; flex-direction: column; gap: 8px; }
+
+.task-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  transition: var(--transition);
+}
+.task-item:hover { transform: translateX(2px); }
+
+.ti-urgent { background:var(--red-bg);    border-color:var(--red-border); }
+.ti-high   { background:var(--yellow-bg); border-color:var(--yellow-border); }
+.ti-normal { background:var(--silver-pale); border-color:var(--border-light); }
+.ti-info   { background:var(--blue-bg);   border-color:var(--blue-border); }
+.ti-gold   { background:#fffaec;          border-color:#f5e0a0; }
+.ti-green  { background:var(--green-bg);  border-color:var(--green-border); }
+.ti-purple { background:var(--purple-bg); border-color:var(--purple-border); }
+
+.ti-icon   { font-size:15px; flex-shrink:0; margin-top:1px; }
+.ti-body   { flex:1; min-width:0; }
+.ti-label  { font-size:12.5px; font-weight:600; color:var(--text-primary); line-height:1.4; margin-bottom:3px; }
+.ti-detail { font-size:11px; color:var(--text-muted); line-height:1.5; }
+.ti-tags   { display:flex; flex-wrap:wrap; gap:3px; margin-top:5px; }
+
+.tag {
+  font-size: 9px; font-weight: 700;
+  letter-spacing: .7px; text-transform: uppercase;
+  padding: 1.5px 6px; border-radius: 3px;
+}
+
+.tag-heirloom { background:#ddeef9; color:#00426d; }
+.tag-harbor   { background:#d8f0e3; color:#064d27; }
+.tag-voh      { background:#fde9d0; color:#7a3a00; }
+.tag-mosquera { background:#ede8fb; color:#3d1f80; }
+.tag-idt      { background:#fde8e6; color:#7a1c10; }
+.tag-buildai  { background:#d6f7fb; color:#024f5e; }
+.tag-payroll  { background:#fde8e6; color:#7a1c10; }
+.tag-turnkey  { background:#eef2f8; color:#2c4a6e; }
+.tag-deadline { background:#fff3cd; color:#7a5200; }
+.tag-review   { background:#e0edf8; color:#00426d; }
+.tag-milestone{ background:#ede8fb; color:#3d1f80; }
+
+.no-tasks {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 24px 16px; gap: 6px;
+  color: var(--text-light); font-size: 12px; text-align: center;
+}
+.no-tasks-icon { font-size: 24px; opacity: .35; }
+
+/* ═══════════════════════════════════════════════════
+   DAY DETAIL MODAL (click a calendar cell)
+═══════════════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,27,62,0.45);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s ease;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+
+.modal {
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  width: 100%; max-width: 680px;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: translateY(16px) scale(0.98);
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+  border: 1px solid var(--border-light);
+}
+.modal-overlay.open .modal { transform: none; }
+
+.modal-head {
+  background: var(--mavs-navy);
+  padding: 22px 26px;
+  display: flex; align-items: flex-start; justify-content: space-between;
+}
+.mh-title {
+  font-family: var(--font-head);
+  font-size: 18px; font-weight: 800; color: #fff;
+}
+.mh-sub { font-size: 12px; color: rgba(184,196,202,.7); margin-top: 3px; }
+.modal-close {
+  width: 30px; height: 30px;
+  border-radius: 50%; border: none;
+  background: rgba(255,255,255,.1);
+  color: #fff; font-size: 16px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+.modal-close:hover { background: rgba(255,255,255,.2); }
+
+.modal-body { padding: 20px 26px 28px; }
+
+/* ═══════════════════════════════════════════════════
+   VIEW CONTAINERS
+═══════════════════════════════════════════════════ */
+.view-container { display: none; }
+.view-container.active { display: block; animation: fadeUp .3s ease; }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+/* ═══════════════════════════════════════════════════
+   PERSON FILTER BANNER
+═══════════════════════════════════════════════════ */
+.person-banner {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 14px 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-xs);
+}
+
+.pb-avatar {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; font-weight: 700;
+  flex-shrink: 0;
+}
+
+.pb-info { flex:1; }
+.pb-name { font-family:var(--font-head); font-size:16px; font-weight:800; color:var(--text-primary); }
+.pb-role { font-size:12px; color:var(--text-muted); margin-top:1px; }
+
+.pb-clear {
+  font-size: 12px; font-weight: 600;
+  color: var(--mavs-royal);
+  background: var(--royal-ghost);
+  border: 1px solid var(--royal-pale);
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  cursor: pointer; transition: var(--transition);
+}
+.pb-clear:hover { background: var(--royal-pale); }
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════ */
+@media (max-width: 1100px) {
+  .hero-stats { grid-template-columns: repeat(2,1fr); }
+  .week-day-cols { grid-template-columns: repeat(3,1fr); }
+}
+
+@media (max-width: 800px) {
+  .sidebar { width: 200px; }
+  .main { margin-left: 200px; }
+  .content { padding: 20px 20px 40px; }
+}
+
+@media (max-width: 600px) {
+  .sidebar { position: relative; width: 100%; height: auto; }
+  .main { margin-left: 0; }
+  .hero-stats { grid-template-columns: repeat(2,1fr); }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--silver-mid); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-gem">TC</div>
+    <div class="logo-words">
+      <div class="logo-brand">TurnkeyCFO</div>
+      <div class="logo-tagline">Operations</div>
+    </div>
+  </div>
+
+  <div class="sidebar-section-label">Filter by Person</div>
+  <div class="person-list" id="personList"></div>
+
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-section-label" style="padding-top:14px">View Mode</div>
+  <div class="view-list">
+    <button class="view-btn active" onclick="setView('month')" id="vbtn-month">
+      <span class="view-icon">📅</span> Month
+    </button>
+    <button class="view-btn" onclick="setView('week')" id="vbtn-week">
+      <span class="view-icon">📆</span> Week
+    </button>
+    <button class="view-btn" onclick="setView('day')" id="vbtn-day">
+      <span class="view-icon">☀️</span> Daily
+    </button>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="live-indicator">
+      <div class="live-dot"></div>
+      Live · Auto-calculated
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════════════════════════════════════════
+     MAIN
+══════════════════════════════════════════════ -->
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title" id="topbarTitle">Operations Calendar</div>
+      <div class="topbar-subtitle" id="topbarSub">All team · Month view</div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-date" id="topbarDate">—</div>
+      <div class="topbar-view-toggle">
+        <button class="tv-btn active" onclick="setView('month')" id="tvbtn-month">Month</button>
+        <button class="tv-btn" onclick="setView('week')" id="tvbtn-week">Week</button>
+        <button class="tv-btn" onclick="setView('day')" id="tvbtn-day">Day</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="hero-stats" id="heroStats"></div>
+    <div class="alert-container" id="alertContainer"></div>
+    <div id="personBanner"></div>
+
+    <!-- MONTH VIEW -->
+    <div class="view-container active" id="view-month">
+      <div class="section-header">
+        <div class="section-title">
+          <span>📅</span>
+          <span id="monthViewTitle">Monthly Calendar</span>
+          <span class="section-pill" id="monthViewPill">2026</span>
+        </div>
+        <div class="month-nav">
+          <button class="mnav-btn" onclick="changeMonth(-1)">‹</button>
+          <div class="mnav-label" id="mnav-label">April 2026</div>
+          <button class="mnav-btn" onclick="changeMonth(1)">›</button>
+        </div>
+      </div>
+      <div class="cal-grid-wrap">
+        <div class="cal-dow-row">
+          <div class="cal-dow weekday">Mon</div>
+          <div class="cal-dow weekday">Tue</div>
+          <div class="cal-dow weekday">Wed</div>
+          <div class="cal-dow weekday">Thu</div>
+          <div class="cal-dow weekday">Fri</div>
+          <div class="cal-dow">Sat</div>
+          <div class="cal-dow">Sun</div>
+        </div>
+        <div class="cal-weeks" id="calWeeks"></div>
+      </div>
+    </div>
+
+    <!-- WEEK VIEW -->
+    <div class="view-container" id="view-week">
+      <div class="section-header">
+        <div class="section-title"><span>📆</span><span id="weekViewTitle">Weekly View</span></div>
+        <div class="week-nav">
+          <button class="mnav-btn" onclick="changeWeek(-1)">‹</button>
+          <div class="mnav-label" id="wnav-label">—</div>
+          <button class="mnav-btn" onclick="changeWeek(1)">›</button>
+        </div>
+      </div>
+      <div class="week-day-cols" id="weekCols"></div>
+    </div>
+
+    <!-- DAY VIEW -->
+    <div class="view-container" id="view-day">
+      <div class="section-header">
+        <div class="section-title"><span>☀️</span><span>Daily Breakdown</span></div>
+      </div>
+      <div class="day-nav">
+        <button class="mnav-btn" onclick="shiftDay5(-1)">‹</button>
+        <div class="day-strip" id="dayStrip"></div>
+        <button class="mnav-btn" onclick="shiftDay5(1)">›</button>
+      </div>
+      <div id="dayDetailContent"></div>
+    </div>
+  </div>
+</main>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <div><div class="mh-title" id="modalTitle">—</div><div class="mh-sub" id="modalSub">—</div></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   DATA
+═══════════════════════════════════════════════════════════ */
+const US_HOLIDAYS = {
+  '2026-04-03':'Good Friday 🇺🇸','2026-05-25':'Memorial Day 🇺🇸',
+  '2026-07-03':'Independence Day Obs. 🇺🇸','2026-07-04':'Independence Day 🇺🇸',
+  '2026-09-07':'Labor Day 🇺🇸','2026-10-12':'Columbus Day 🇺🇸',
+  '2026-11-11':'Veterans Day 🇺🇸','2026-11-26':'Thanksgiving 🇺🇸',
+  '2026-11-27':'Thanksgiving Fri. 🇺🇸','2026-12-25':'Christmas 🇺🇸',
+};
+const INDIA_HOLIDAYS = {
+  '2026-04-02':'Ram Navami 🇮🇳','2026-04-06':'Mahavir Jayanti 🇮🇳',
+  '2026-04-14':'Ambedkar Jayanti 🇮🇳','2026-05-13':'Buddha Purnima 🇮🇳',
+  '2026-08-15':'Independence Day 🇮🇳','2026-09-02':'Janmashtami 🇮🇳',
+  '2026-10-02':'Gandhi Jayanti 🇮🇳','2026-10-20':'Dussehra 🇮🇳',
+  '2026-11-08':'Diwali 🇮🇳','2026-11-09':'Diwali Holiday 🇮🇳',
+  '2026-12-25':'Christmas 🇮🇳',
+};
+const SA_HOLIDAYS = {
+  '2026-04-03':'Good Friday 🇿🇦','2026-04-06':'Easter Monday 🇿🇦',
+  '2026-04-27':'Freedom Day 🇿🇦','2026-05-01':"Workers' Day 🇿🇦",
+  '2026-06-16':'Youth Day 🇿🇦','2026-08-10':"Women's Day 🇿🇦",
+  '2026-09-24':'Heritage Day 🇿🇦','2026-12-16':'Day of Reconciliation 🇿🇦',
+  '2026-12-25':'Christmas 🇿🇦','2026-12-26':'Day of Goodwill 🇿🇦',
+};
+
+const MONTH_NAMES = ['January','February','March','April','May','June',
+                     'July','August','September','October','November','December'];
+const DOW_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function iso(d){ return d.toISOString().slice(0,10); }
+function isWE(d){ return d.getDay()===0||d.getDay()===6; }
+function isUSH(d){ return !!US_HOLIDAYS[iso(d)]; }
+function isBD(d){ return !isWE(d)&&!isUSH(d); }
+
+function addD(d,n){ const r=new Date(d); r.setDate(r.getDate()+n); return r; }
+function addBD(d,n){
+  let cur=new Date(d),count=0,dir=n>=0?1:-1,steps=Math.abs(n);
+  while(count<steps){ cur=addD(cur,dir); if(isBD(cur))count++; }
+  return cur;
+}
+function prevFri(d){
+  let r=new Date(d);
+  while(r.getDay()===0||r.getDay()===6) r=addD(r,-1);
+  return r;
+}
+function getBDsInMonth(y,m){
+  const days=[]; const last=new Date(y,m,0).getDate();
+  for(let d=1;d<=last;d++){ const dt=new Date(y,m-1,d); if(isBD(dt))days.push(dt); }
+  return days;
+}
+function nthBD(y,m,n){ const b=getBDsInMonth(y,m); return b[n-1]||null; }
+function bdNum(d){
+  if(!isBD(d))return 0;
+  const b=getBDsInMonth(d.getFullYear(),d.getMonth()+1);
+  const i=b.findIndex(x=>iso(x)===iso(d)); return i>=0?i+1:0;
+}
+function calDay(y,m,n){
+  const l=new Date(y,m,0).getDate(); return n<=l?new Date(y,m-1,n):null;
+}
+function firstBDOnOrAfter(y,m,day){
+  let d=new Date(y,m-1,day); while(!isBD(d))d=addD(d,1); return d;
+}
+function eomMinus5BD(y,m){
+  const l=new Date(y,m,0).getDate(); let d=new Date(y,m-1,l),c=0;
+  while(c<5){ d=addD(d,-1); if(isBD(d))c++; } return d;
+}
+function lastBizWeekMon(y,m){
+  const l=new Date(y,m,0).getDate(); let d=new Date(y,m-1,l);
+  while(d.getDay()!==1)d=addD(d,-1);
+  while(!isBD(d)&&d.getMonth()===m-1)d=addD(d,1);
+  return d;
+}
+
+/* PAYROLL */
+function buildPayrollDates(){
+  const out=new Map();
+  for(let mo=4;mo<=12;mo++){
+    const last=new Date(2026,mo,0).getDate();
+    for(const day of[15,last]){
+      const pd=prevFri(new Date(2026,mo-1,day));
+      out.set(iso(pd),pd);
+    }
+  }
+  return [...out.values()].sort((a,b)=>a-b);
+}
+const PAYROLL_DATES=buildPayrollDates();
+
+function buildPayrollMap(){
+  const m=new Map();
+  const add=(d,e)=>{ const k=iso(d); if(!m.has(k))m.set(k,[]); m.get(k).push(e); };
+  for(const pd of PAYROLL_DATES){
+    const cd=addBD(pd,-2), r1=addBD(cd,-3), r2=addBD(cd,-2), r3=addBD(cd,-1);
+    add(pd,{type:'PAY_DATE',payDate:pd,cashDue:cd});
+    add(cd,{type:'CASH_DUE',payDate:pd,cashDue:cd});
+    add(r1,{type:'REMIND_GREEN',payDate:pd,cashDue:cd});
+    add(r2,{type:'REMIND_YELLOW',payDate:pd,cashDue:cd});
+    add(r3,{type:'REMIND_RED',payDate:pd,cashDue:cd});
+  }
+  return m;
+}
+const PAYROLL_MAP=buildPayrollMap();
+
+function fmtS(d){ return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+
+/* BUILD TASKS */
+function buildTasks(d){
+  const tasks={ricky:[],hardik:[],eldine:[],nik:[],events:[]};
+  if(!isBD(d)) return tasks;
+
+  const y=d.getFullYear(), mo=d.getMonth()+1, dow=d.getDay(), bn=bdNum(d);
+  const evts=PAYROLL_MAP.get(iso(d))||[];
+
+  // PAYROLL
+  for(const ev of evts){
+    const ps=fmtS(ev.payDate), cs=fmtS(ev.cashDue);
+    if(ev.type==='PAY_DATE'){
+      tasks.events.push({icon:'💵',label:`Heirloom Pay Date`,detail:`Confirm payroll processed & funds disbursed. Pay date: ${ps}.`,tags:['payroll'],p:'urgent',type:'payroll'});
+      tasks.ricky.push({icon:'✅',label:`Confirm Heirloom payroll processed`,detail:`Verify payroll run completed and funds disbursed.`,tags:['heirloom','payroll'],p:'urgent',type:'payroll'});
+    } else if(ev.type==='CASH_DUE'){
+      tasks.events.push({icon:'🔴',label:`CASH DUE — Heirloom Payroll`,detail:`Fund account by EOD today. Pay date: ${ps}.`,tags:['payroll','deadline'],p:'urgent',type:'payroll'});
+      tasks.ricky.push({icon:'🔴',label:`Cash due today — Heirloom payroll`,detail:`Fund account by EOD. Pay date: ${ps}.`,tags:['heirloom','payroll'],p:'urgent',type:'payroll'});
+    } else if(ev.type==='REMIND_GREEN'){
+      tasks.events.push({icon:'🟢',label:`Payroll Cash Reminder (3 days early)`,detail:`Cash due ${cs} · Pay date ${ps}. Begin staging.`,tags:['payroll'],p:'normal',type:'payroll'});
+      tasks.ricky.push({icon:'🟢',label:`Stage Heirloom payroll cash (due ${cs})`,detail:`Early reminder: ensure funds are staged for payroll.`,tags:['heirloom'],p:'normal',type:'payroll'});
+    } else if(ev.type==='REMIND_YELLOW'){
+      tasks.events.push({icon:'🟡',label:`Payroll Cash Reminder (2 days out)`,detail:`Cash due ${cs} · Pay date ${ps}.`,tags:['payroll'],p:'high',type:'payroll'});
+      tasks.ricky.push({icon:'🟡',label:`Confirm Heirloom payroll cash (due ${cs})`,detail:`Confirm funds available. Pay date: ${ps}.`,tags:['heirloom'],p:'high',type:'payroll'});
+    } else if(ev.type==='REMIND_RED'){
+      tasks.events.push({icon:'🔴',label:`⚠ Payroll Cash Due TOMORROW`,detail:`Last chance — fund by ${cs}. Pay: ${ps}.`,tags:['payroll','deadline'],p:'urgent',type:'payroll'});
+      tasks.ricky.push({icon:'🔴',label:`⚠ Payroll cash due TOMORROW`,detail:`Fund Heirloom payroll account today. Pay: ${ps}.`,tags:['heirloom'],p:'urgent',type:'payroll'});
+    }
+  }
+
+  // BD 1
+  if(bn===1){
+    tasks.events.push({icon:'📌',label:'BD 1 — Statements Available',detail:'All bank & CC statements available for retrieval.',tags:['milestone'],p:'gold',type:'milestone'});
+    tasks.hardik.push({icon:'📥',label:'Retrieve all bank & CC statements',detail:'Download for Heirloom, Harbor, VoH, Mosquera, Build AI. File in folders.',tags:['heirloom','harbor','voh','mosquera','buildai'],p:'gold',type:'task'});
+    tasks.hardik.push({icon:'📒',label:'Begin VoH + Mosquera monthly bookkeeping',detail:'Touch once at beginning of month. Categorize all transactions.',tags:['voh','mosquera'],p:'normal',type:'bookkeeping'});
+    tasks.hardik.push({icon:'📒',label:'Harbor + Build AI monthly close begins',detail:'Begin monthly close for Harbor and Build AI.',tags:['harbor','buildai'],p:'normal',type:'bookkeeping'});
+    tasks.hardik.push({icon:'🔧',label:'Walt / IDT — manage as needed',detail:'Independent management, no fixed schedule.',tags:['idt'],p:'info',type:'task'});
+  }
+  if(bn===2) tasks.hardik.push({icon:'📒',label:'Continue Harbor & Build AI close',detail:'Finalize categorization, flag unknowns → Ricky.',tags:['harbor','buildai'],p:'normal',type:'bookkeeping'});
+  if(bn===3){
+    tasks.hardik.push({icon:'📤',label:'Harbor & Build AI close → send to Ricky',detail:'Deliver finalized close to Ricky for review.',tags:['harbor','buildai'],p:'high',type:'delivery'});
+    tasks.ricky.push({icon:'👁',label:'Review Harbor & Build AI close',detail:'Review and deliver to clients.',tags:['harbor','buildai'],p:'high',type:'review'});
+  }
+
+  // Tue/Thu Heirloom inbox
+  if(dow===2||dow===4) tasks.hardik.push({icon:'📬',label:'Heirloom inbox check — bill pay',detail:'Quick scan of accounting inbox (~2 min). Process any bills.',tags:['heirloom'],p:'normal',type:'recurring'});
+
+  // Friday
+  if(dow===5){
+    tasks.ricky.push({icon:'👁',label:'Heirloom Friday review',detail:'Review open items, outstanding bills, escalations.',tags:['heirloom','review'],p:'normal',type:'review'});
+    tasks.eldine.push({icon:'📋',label:'Submit weekly timesheets — all staff',detail:'Collect and submit timesheets for all team members.',tags:['deadline'],p:'high',type:'recurring'});
+  }
+
+  // 3rd cal day
+  const c3=calDay(y,mo,3);
+  if(c3&&iso(d)===iso(c3)){
+    tasks.hardik.push({icon:'⚡',label:'Ramp coding deadline — 3rd cal. day',detail:'All Ramp transactions coded by EOD. No exceptions.',tags:['heirloom','deadline'],p:'urgent',type:'deadline'});
+    tasks.nik.push({icon:'🔑',label:'Confirm Subsplash access — Heirloom',detail:'Verify Nik has active Subsplash platform access.',tags:['heirloom','deadline'],p:'high',type:'deadline'});
+    tasks.events.push({icon:'📌',label:'3rd Cal. Day — Ramp & Subsplash Deadline',detail:'Ramp coding + Nik Subsplash access confirmed.',tags:['milestone','deadline'],p:'gold',type:'milestone'});
+  }
+
+  // 8th cal day
+  const c8=calDay(y,mo,8);
+  if(c8&&iso(d)===iso(c8)){
+    tasks.nik.push({icon:'📊',label:'Heirloom SaaS metrics due',detail:'Complete and deliver monthly SaaS metrics for Heirloom.',tags:['heirloom','deadline'],p:'high',type:'deadline'});
+    tasks.events.push({icon:'📌',label:'8th Cal. Day — SaaS Metrics Due',detail:"Nik's monthly SaaS metrics must be delivered today.",tags:['milestone'],p:'gold',type:'milestone'});
+  }
+
+  // Last biz week Monday → pre-close
+  try {
+    const lbw=lastBizWeekMon(y,mo);
+    if(iso(d)===iso(lbw)) tasks.hardik.push({icon:'📒',label:'START Heirloom pre-close categorization',detail:'Dedicated pre-close day — begin Heirloom categorization.',tags:['heirloom'],p:'high',type:'bookkeeping'});
+  } catch(e){}
+
+  // ~5 BD before EOM → receipt reminder
+  try {
+    const rd=eomMinus5BD(y,mo);
+    if(iso(d)===iso(rd)) tasks.ricky.push({icon:'📣',label:'Send receipt/memo reminder → all staff',detail:'Remind staff to submit Ramp receipts & memos. Due by 3rd cal. day next month.',tags:['heirloom','deadline'],p:'high',type:'admin'});
+  } catch(e){}
+
+  // BD 5 — close + BvA start
+  const bd5=nthBD(y,mo,5);
+  if(bd5&&iso(d)===iso(bd5)){
+    tasks.hardik.push({icon:'✅',label:'★ CLOSE Heirloom books — BD 5',detail:'Heirloom books fully closed today. Tier 1 priority.',tags:['heirloom','deadline'],p:'urgent',type:'close'});
+    tasks.ricky.push({icon:'🔁',label:'Begin Budget vs. Actuals — Heirloom',detail:'Books closed by Hardik. BvA analysis due BD 9.',tags:['heirloom'],p:'high',type:'analysis'});
+    tasks.events.push({icon:'⭐',label:'BD 5 — Heirloom Books Close',detail:'Hardik closes books. Ricky begins BvA.',tags:['milestone','deadline'],p:'urgent',type:'milestone'});
+  }
+
+  // BD 8 — delivery
+  const bd8=nthBD(y,mo,8);
+  if(bd8&&iso(d)===iso(bd8)){
+    tasks.ricky.push({icon:'📦',label:'★ Monthly financial delivery — ALL clients',detail:'Deliver to Heirloom, Harbor, VoH, Mosquera, Build AI.',tags:['heirloom','harbor','voh','mosquera','buildai','deadline'],p:'urgent',type:'delivery'});
+    tasks.events.push({icon:'⭐',label:'BD 8 — Client Delivery Due',detail:'Ricky delivers monthly financials to all clients.',tags:['milestone','deadline'],p:'urgent',type:'milestone'});
+  }
+
+  // BD 9 — BvA due
+  const bd9=nthBD(y,mo,9);
+  if(bd9&&iso(d)===iso(bd9)){
+    tasks.ricky.push({icon:'📈',label:'Budget vs. Actuals due — Heirloom',detail:'Finalize BvA. Share with Dakota by BD 15.',tags:['heirloom','deadline'],p:'urgent',type:'analysis'});
+    tasks.events.push({icon:'⭐',label:'BD 9 — BvA Due',detail:"Ricky's Budget vs. Actuals must be finalized.",tags:['milestone'],p:'urgent',type:'milestone'});
+  }
+
+  // BD 15 — BvA → Dakota
+  const bd15=nthBD(y,mo,15);
+  if(bd15&&iso(d)===iso(bd15)){
+    tasks.ricky.push({icon:'📤',label:'Share BvA with Dakota — BD 15',detail:'Send finalized Budget vs. Actuals to Dakota.',tags:['heirloom','deadline'],p:'high',type:'delivery'});
+    tasks.events.push({icon:'⭐',label:'BD 15 — BvA Shared with Dakota',detail:'Ricky sends BvA report to Dakota.',tags:['milestone'],p:'gold',type:'milestone'});
+  }
+
+  // BD 6–8 TurnkeyCFO
+  if(bn>=6&&bn<=8) tasks.ricky.push({icon:'📒',label:'TurnkeyCFO books — close (last priority)',detail:'Close internal books after all client books are done.',tags:['turnkey'],p:'info',type:'bookkeeping'});
+
+  // Harbor mid-month
+  try {
+    const mid=firstBDOnOrAfter(y,mo,15);
+    if(iso(d)===iso(mid)){
+      tasks.hardik.push({icon:'📒',label:'Harbor + Build AI mid-month categorization',detail:`Categorize all transactions. Flag unknowns → Ricky. Client update by ${fmtS(addBD(mid,2))}.`,tags:['harbor','buildai'],p:'high',type:'bookkeeping'});
+    }
+    const hsd=addBD(mid,2);
+    if(iso(d)===iso(hsd)&&iso(d)!==iso(mid)){
+      tasks.ricky.push({icon:'📤',label:'Harbor mid-month update → client',detail:"Review Hardik's mid-month work. Deliver to Harbor client.",tags:['harbor'],p:'high',type:'delivery'});
+    }
+  } catch(e){}
+
+  // First-week Heirloom close (BD 2-4)
+  if(bn>=2&&bn<=4&&!tasks.hardik.some(t=>t.label.includes('CLOSE'))){
+    tasks.hardik.push({icon:'📒',label:'Heirloom first-week close',detail:'Finalize Heirloom categorization. Tier 1 — done by BD 5.',tags:['heirloom'],p:'high',type:'bookkeeping'});
+  }
+
+  return tasks;
+}
+
+/* ALL TASKS FLAT */
+function allTasksForDay(d){
+  const t=buildTasks(d); return Object.values(t).flat();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════ */
+let currentView='month';
+let currentPerson='all'; // all|ricky|hardik|eldine|nik|events
+let currentMonth=3; // 0-indexed, April=3
+let currentYear=2026;
+let currentWeekStart=null;
+let currentDayIndex=0;
+let current5Days=[];
+
+// Init week/day based on today or Apr 1
+function initDateState(){
+  const today=new Date();
+  const rangeStart=new Date(2026,3,1), rangeEnd=new Date(2026,11,31);
+  let ref=(today>=rangeStart&&today<=rangeEnd)?today:rangeStart;
+  // Week: find Monday of ref week
+  let mon=new Date(ref);
+  while(mon.getDay()!==1) mon=addD(mon,-1);
+  currentWeekStart=mon;
+  // 5 days starting from ref
+  let day=new Date(ref);
+  while(!isBD(day)) day=addD(day,1);
+  current5Days=[];
+  let cur=new Date(day);
+  while(current5Days.length<5){ if(isBD(cur))current5Days.push(new Date(cur)); cur=addD(cur,1); }
+  currentDayIndex=0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER HELPERS
+═══════════════════════════════════════════════════════════ */
+const PEOPLE_DEF=[
+  {key:'all',   name:'All Team',     role:'Everyone',                       cls:'pa-all',    pcls:'pca-events', init:'★'},
+  {key:'ricky', name:'Ricky',        role:'Principal · Strategy & Delivery', cls:'pa-ricky',  pcls:'pca-ricky',  init:'R'},
+  {key:'hardik',name:'Hardik',       role:'Accountant · Bookkeeping & Close',cls:'pa-hardik', pcls:'pca-hardik', init:'H'},
+  {key:'eldine',name:'Eldine',       role:'Operations · Timesheets & Admin', cls:'pa-eldine', pcls:'pca-eldine', init:'E'},
+  {key:'nik',   name:'Nik',          role:'SaaS & Platforms · Heirloom',     cls:'pa-nik',    pcls:'pca-nik',    init:'N'},
+  {key:'events',name:'Key Events',   role:'Milestones · Payroll · Deadlines',cls:'pa-events', pcls:'pca-events', init:'★'},
+];
+
+const PRIORITY_CLS={urgent:'ti-urgent',high:'ti-high',normal:'ti-normal',info:'ti-info',gold:'ti-gold',green:'ti-green',purple:'ti-purple'};
+const WPRIORITY_CLS={urgent:'wt-urgent',high:'wt-high',normal:'wt-normal',info:'wt-info',gold:'wt-gold',purple:'wt-purple',green:'wt-green'};
+
+function tagHTML(tags){
+  return (tags||[]).map(t=>`<span class="tag tag-${t}">${t.toUpperCase()}</span>`).join('');
+}
+
+function taskItemHTML(task,showWho=false){
+  const pcls=PRIORITY_CLS[task.p]||'ti-normal';
+  const who=showWho&&task._who?`<div class="ti-detail" style="color:var(--mavs-royal);font-weight:600;margin-bottom:2px">${task._who}</div>`:'';
+  return `<div class="task-item ${pcls}">
+    <div class="ti-icon">${task.icon}</div>
+    <div class="ti-body">
+      ${who}
+      <div class="ti-label">${task.label}</div>
+      <div class="ti-detail">${task.detail}</div>
+      ${task.tags?.length?`<div class="ti-tags">${tagHTML(task.tags)}</div>`:''}
+    </div>
+  </div>`;
+}
+
+function weekTaskHTML(task){
+  const pcls=WPRIORITY_CLS[task.p]||'wt-normal';
+  return `<div class="week-task ${pcls}">
+    <div class="wt-icon">${task.icon}</div>
+    <div class="wt-content">
+      <div class="wt-label">${task.label}</div>
+      <div class="wt-who">${task._who||''}</div>
+    </div>
+  </div>`;
+}
+
+function filterTasks(tasks){
+  if(currentPerson==='all'){
+    // merge all with _who label
+    const out=[];
+    const map={ricky:'Ricky',hardik:'Hardik',eldine:'Eldine',nik:'Nik',events:'Key Events'};
+    for(const[k,arr] of Object.entries(tasks)){
+      for(const t of arr) out.push({...t,_who:map[k]});
+    }
+    return {all:out};
+  }
+  return {[currentPerson]: tasks[currentPerson]||[]};
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CELL COLOR LOGIC
+═══════════════════════════════════════════════════════════ */
+function cellColorCls(d){
+  const evts=PAYROLL_MAP.get(iso(d))||[];
+  for(const ev of evts){
+    if(ev.type==='CASH_DUE'||ev.type==='REMIND_RED') return 'has-payroll-urgent';
+    if(ev.type==='REMIND_YELLOW') return 'has-payroll-yellow';
+    if(ev.type==='REMIND_GREEN') return 'has-payroll-green';
+  }
+  const bn=bdNum(d);
+  if([5,8,9,15].includes(bn)) return 'has-milestone';
+  return 'has-tasks';
+}
+
+function cellChips(d){
+  const tasks=buildTasks(d);
+  const flat=filterTasks(tasks);
+  const all=Object.values(flat).flat();
+  if(!all.length) return '';
+
+  const chips=[];
+  for(const t of all.slice(0,3)){
+    let cls='chip-general';
+    if(t.type==='payroll'||(t.p==='urgent'&&t.type==='payroll')) cls='chip-payroll-red';
+    else if(t.type==='payroll') cls='chip-payroll-green';
+    else if(t.type==='milestone') cls='chip-milestone';
+    else if(t.tags?.includes('heirloom')) cls='chip-heirloom';
+    else if(t.tags?.includes('harbor')||t.tags?.includes('buildai')) cls='chip-harbor';
+    else if(t.tags?.includes('voh')||t.tags?.includes('mosquera')) cls='chip-eldine';
+
+    // payroll specific
+    if(['PAY_DATE','CASH_DUE'].some(x=>t.type==='payroll'&&t.icon==='🔴')) cls='chip-payroll-red';
+    if(t.icon==='🟡') cls='chip-payroll-yellow';
+    if(t.icon==='🟢') cls='chip-payroll-green';
+
+    chips.push(`<div class="cell-chip ${cls}">
+      <span class="chip-icon">${t.icon}</span>
+      <span class="chip-text">${t.label}</span>
+    </div>`);
+  }
+  const more=all.length-3;
+  return chips.join('')+(more>0?`<div class="cell-more">+${more} more</div>`:'');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HOLIDAY FLAGS
+═══════════════════════════════════════════════════════════ */
+function getHols(d){
+  const k=iso(d), out=[];
+  if(US_HOLIDAYS[k]) out.push(US_HOLIDAYS[k]);
+  if(INDIA_HOLIDAYS[k]) out.push(INDIA_HOLIDAYS[k]);
+  if(SA_HOLIDAYS[k]) out.push(SA_HOLIDAYS[k]);
+  return out;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER: MONTH VIEW
+═══════════════════════════════════════════════════════════ */
+function renderMonth(){
+  const y=currentYear, m=currentMonth; // m is 0-indexed
+  document.getElementById('mnav-label').textContent=`${MONTH_NAMES[m]} ${y}`;
+  document.getElementById('monthViewTitle').textContent='Monthly Calendar';
+  document.getElementById('monthViewPill').textContent=`${MONTH_NAMES[m]} ${y}`;
+
+  // Build weeks (Mon-start)
+  const first=new Date(y,m,1);
+  const last=new Date(y,m+1,0);
+  const today=new Date();
+
+  // Start from Monday before or on first
+  let cur=new Date(first);
+  while(cur.getDay()!==1) cur=addD(cur,-1);
+
+  let html='';
+  while(cur<=last||(cur.getDay()!==1)){
+    html+='<div class="cal-week">';
+    for(let i=0;i<7;i++){
+      const d=new Date(cur);
+      addD(cur,i); // just reference
+      const dd=addD(cur,i-7); // shift back - recalculate
+      // simpler:
+      const dayDate=new Date(cur.getTime()+(i)*86400000);
+      const outside=dayDate.getMonth()!==m;
+      const weekend=isWE(dayDate);
+      const usHol=isUSH(dayDate);
+      const isToday=iso(dayDate)===iso(today);
+      const bn=isBD(dayDate)?bdNum(dayDate):0;
+      const hols=getHols(dayDate);
+      const ccls=cellColorCls(dayDate);
+
+      let cellCls='cal-cell';
+      if(outside) cellCls+=' outside';
+      else if(usHol) cellCls+=' us-hol';
+      else if(weekend) cellCls+=' weekend';
+      else if(isToday) cellCls+=' today';
+      if(!outside&&!weekend&&!usHol) cellCls+=` ${ccls}`;
+
+      const numHtml=`<div class="cell-num">
+        ${dayDate.getDate()}
+        ${bn&&!outside?`<span class="cell-bd">BD${bn}</span>`:''}
+      </div>`;
+
+      let innerHtml='';
+      if(outside){
+        innerHtml=`<div class="cell-num" style="color:var(--text-light)">${dayDate.getDate()}</div>`;
+      } else if(usHol){
+        innerHtml=numHtml+`<div class="cell-chips"><div class="cell-chip chip-us-hol"><span class="chip-icon">🇺🇸</span><span class="chip-text">${US_HOLIDAYS[iso(dayDate)]}</span></div></div>`;
+      } else {
+        const holFl=hols.filter(h=>!h.includes('🇺🇸'));
+        const holHtml=holFl.length?holFl.map(h=>`<div style="font-size:9.5px;color:var(--yellow);font-weight:600;line-height:1.2">${h}</div>`).join(''):'';
+        innerHtml=numHtml+(holHtml?`<div style="margin-bottom:3px">${holHtml}</div>`:'')+`<div class="cell-chips">${outside?'':cellChips(dayDate)}</div>`;
+      }
+
+      const clickAttr=(outside||weekend||usHol)?'':`onclick="openDayModal('${iso(dayDate)}')"`;
+      html+=`<div class="${cellCls}" ${clickAttr}>${innerHtml}</div>`;
+    }
+    html+='</div>';
+    cur=addD(cur,7);
+    if(cur>last&&cur.getDay()===1) break;
+  }
+  document.getElementById('calWeeks').innerHTML=html;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER: WEEK VIEW
+═══════════════════════════════════════════════════════════ */
+function renderWeek(){
+  // 5 business days from currentWeekStart
+  const wDays=[];
+  let cur=new Date(currentWeekStart);
+  while(cur.getDay()!==1) cur=addD(cur,-1); // ensure Monday
+  currentWeekStart=new Date(cur);
+
+  // Collect Mon–Fri of this week
+  for(let i=0;i<7;i++){
+    const d=new Date(cur.getTime()+i*86400000);
+    if(!isWE(d)) wDays.push(d);
+  }
+
+  const start=wDays[0], end=wDays[wDays.length-1];
+  document.getElementById('wnav-label').textContent=
+    `${start.toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${end.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+
+  const today=new Date();
+  let html='';
+
+  for(const d of wDays){
+    const usHol=isUSH(d), bn=isBD(d)?bdNum(d):0;
+    const isToday=iso(d)===iso(today);
+    const evts=PAYROLL_MAP.get(iso(d))||[];
+    const hasPayUrgent=evts.some(e=>e.type==='CASH_DUE'||e.type==='REMIND_RED');
+    const hasPayYellow=evts.some(e=>e.type==='REMIND_YELLOW');
+    const hasPayGreen=evts.some(e=>e.type==='REMIND_GREEN');
+    const bdn=bn; const isMile=[5,8,9,15].includes(bdn);
+
+    let colCls='week-col';
+    if(isToday) colCls+=' today-col';
+    if(hasPayUrgent) colCls+=' has-payroll-urgent';
+    else if(hasPayYellow) colCls+=' has-payroll-yellow';
+    else if(hasPayGreen) colCls+=' has-payroll-green';
+    else if(isMile) colCls+=' milestone-col';
+
+    const headCls=isToday?'wcol-head today-head':'wcol-head';
+
+    const tasks=buildTasks(d);
+    const filtered=filterTasks(tasks);
+    const allFlat=Object.values(filtered).flat();
+
+    const taskHtml=usHol
+      ? `<div class="week-task wt-normal"><div class="wt-icon">🇺🇸</div><div class="wt-content"><div class="wt-label">${US_HOLIDAYS[iso(d)]}</div><div class="wt-who">US Holiday — Closed</div></div></div>`
+      : (allFlat.length===0
+          ? `<div class="no-tasks"><div class="no-tasks-icon">☑</div><div>Clear day</div></div>`
+          : allFlat.map(t=>weekTaskHTML(t)).join(''));
+
+    const hols=getHols(d).filter(h=>!h.includes('🇺🇸'));
+    const holHtml=hols.length?`<div style="font-size:10px;color:var(--yellow);font-weight:600;padding:4px 14px;border-bottom:1px solid var(--border-light)">${hols.join(' · ')}</div>`:'';
+
+    html+=`<div class="${colCls}">
+      <div class="${headCls}">
+        <div class="wcol-dow">${DOW_SHORT[d.getDay()]}</div>
+        <div class="wcol-date">${d.getDate()}</div>
+        ${bn?`<div class="wcol-bd">BD ${bn}</div>`:''}
+      </div>
+      ${holHtml}
+      <div class="wcol-body">${taskHtml}</div>
+    </div>`;
+  }
+  document.getElementById('weekCols').innerHTML=html;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER: DAY VIEW
+═══════════════════════════════════════════════════════════ */
+function renderDay(){
+  // Day strip (5 days)
+  let stripHtml='';
+  const today=new Date();
+  for(let i=0;i<current5Days.length;i++){
+    const d=current5Days[i];
+    const bn=bdNum(d);
+    const evts=PAYROLL_MAP.get(iso(d))||[];
+    const hasPay=evts.length>0;
+    const isPayUrgent=evts.some(e=>e.type==='CASH_DUE'||e.type==='PAY_DATE'||e.type==='REMIND_RED');
+    const isMile=[5,8,9,15].includes(bn);
+    const isToday2=iso(d)===iso(today);
+
+    let badge='';
+    if(isPayUrgent) badge=`<span class="dp-badge dpb-payroll">Payroll</span>`;
+    else if(isMile) badge=`<span class="dp-badge dpb-mile">Milestone</span>`;
+    else if(bn) badge=`<span class="dp-badge dpb-bd">BD ${bn}</span>`;
+
+    stripHtml+=`<div class="day-pill ${i===currentDayIndex?'active':''}" onclick="selectDay(${i})">
+      <div class="dp-dow">${DOW_SHORT[d.getDay()]}</div>
+      <div class="dp-num">${d.getDate()}</div>
+      <div class="dp-mon">${MONTH_NAMES[d.getMonth()].slice(0,3)}</div>
+      ${badge}
+    </div>`;
+  }
+  document.getElementById('dayStrip').innerHTML=stripHtml;
+  renderDayDetail();
+}
+
+function renderDayDetail(){
+  const d=current5Days[currentDayIndex];
+  if(!d) return;
+  const bn=bdNum(d);
+  const hols=getHols(d);
+  const tasks=buildTasks(d);
+
+  const holHtml=hols.length?`
+    <div class="alert-bar yellow" style="margin-bottom:16px">
+      <div class="alert-icon">🌍</div>
+      <div class="alert-content">
+        <div class="alert-title">Holiday Flags</div>
+        <div class="alert-body">${hols.join(' · ')}</div>
+      </div>
+    </div>`:'';
+
+  // Person columns
+  let colsHtml='';
+  const showPeople=currentPerson==='all'
+    ? PEOPLE_DEF.filter(p=>p.key!=='all')
+    : PEOPLE_DEF.filter(p=>p.key===currentPerson&&p.key!=='all');
+
+  for(const p of showPeople){
+    const pTasks=tasks[p.key]||[];
+    if(currentPerson!=='all'&&pTasks.length===0) continue;
+    const bodyHtml=pTasks.length===0
+      ? `<div class="no-tasks"><div class="no-tasks-icon">☑</div><div>No tasks today</div></div>`
+      : `<div class="task-list">${pTasks.map(t=>taskItemHTML(t)).join('')}</div>`;
+
+    colsHtml+=`<div class="person-col">
+      <div class="pcol-head ph-${p.key}">
+        <div class="pcol-avatar ${p.pcls}">${p.init}</div>
+        <div class="pcol-info">
+          <div class="pcol-name">${p.name}</div>
+          <div class="pcol-role">${p.role}</div>
+        </div>
+        ${pTasks.length?`<div class="pcol-count">${pTasks.length}</div>`:''}
+      </div>
+      <div class="pcol-body">${bodyHtml}</div>
+    </div>`;
+  }
+
+  const allFlat=Object.values(tasks).flat();
+  const totalTasks=currentPerson==='all'?allFlat.length:(tasks[currentPerson]||[]).length;
+
+  document.getElementById('dayDetailContent').innerHTML=`
+    <div class="day-detail-header">
+      <div class="ddh-left">
+        <div class="ddh-title">${d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})}</div>
+        <div class="ddh-sub">
+          ${bn?`Business Day ${bn} of ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`:''}
+        </div>
+      </div>
+      <div class="ddh-right">
+        <div class="ddh-pill">📋 ${totalTasks} task${totalTasks!==1?'s':''}</div>
+        ${bn?`<div class="ddh-pill" style="background:var(--royal-ghost);color:var(--mavs-royal);border-color:var(--royal-pale)">BD ${bn}</div>`:''}
+      </div>
+    </div>
+    ${holHtml}
+    <div class="day-person-grid">${colsHtml||'<div style="color:var(--text-muted);padding:20px">No tasks for this person today.</div>'}</div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL (click calendar cell)
+═══════════════════════════════════════════════════════════ */
+function openDayModal(dateStr){
+  const d=new Date(dateStr+'T12:00:00');
+  const bn=bdNum(d);
+  const hols=getHols(d);
+  const tasks=buildTasks(d);
+
+  document.getElementById('modalTitle').textContent=
+    d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  document.getElementById('modalSub').textContent=
+    `${bn?`Business Day ${bn}`:''} ${hols.length?'· '+hols.join(' · '):''}`;
+
+  // Build modal body with all tasks merged with person labels
+  const map={ricky:'👤 Ricky',hardik:'👤 Hardik',eldine:'👤 Eldine',nik:'👤 Nik',events:'📌 Key Events'};
+  const allTasksHTML=Object.entries(tasks).map(([k,arr])=>{
+    if(!arr.length) return '';
+    const filtered=currentPerson==='all'||currentPerson===k;
+    if(!filtered) return '';
+    return `<div style="margin-bottom:14px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px">${map[k]}</div>
+      <div class="task-list">${arr.map(t=>taskItemHTML(t)).join('')}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('modalBody').innerHTML=allTasksHTML||`<div class="no-tasks"><div class="no-tasks-icon">🗓</div><div>No tasks this day.</div></div>`;
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal(e){
+  if(!e||e.target===document.getElementById('modal')||e.type==='click')
+    document.getElementById('modal').classList.remove('open');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════════════════ */
+function changeMonth(dir){
+  currentMonth+=dir;
+  if(currentMonth>11){currentMonth=0;currentYear++;}
+  if(currentMonth<0){currentMonth=11;currentYear--;}
+  // Clamp to Apr–Dec 2026
+  if(currentYear<2026||( currentYear===2026&&currentMonth<3)){currentYear=2026;currentMonth=3;}
+  if(currentYear>2026||( currentYear===2026&&currentMonth>11)){currentYear=2026;currentMonth=11;}
+  renderMonth();
+  updateStats();
+}
+
+function changeWeek(dir){
+  currentWeekStart=addD(currentWeekStart,dir*7);
+  // Clamp
+  const start=new Date(2026,3,1), end=new Date(2026,11,31);
+  if(currentWeekStart<start) currentWeekStart=new Date(start);
+  if(currentWeekStart>end) currentWeekStart=new Date(end);
+  renderWeek();
+  updateStats();
+}
+
+function shiftDay5(dir){
+  // Move the 5-day window by 5 business days
+  const anchor=current5Days[dir>0?4:0];
+  let next=addD(anchor,dir>0?1:-1);
+  while(!isBD(next)) next=addD(next,dir>0?1:-1);
+  current5Days=[];
+  let cur=new Date(next);
+  if(dir<0){
+    // go 4 more back
+    for(let i=0;i<4;i++){ cur=addD(cur,-1); while(!isBD(cur))cur=addD(cur,-1); }
+  }
+  while(current5Days.length<5){ if(isBD(cur))current5Days.push(new Date(cur)); cur=addD(cur,1); }
+  currentDayIndex=0;
+  renderDay();
+  updateStats();
+}
+
+function selectDay(idx){
+  currentDayIndex=idx;
+  renderDay();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   VIEW SWITCHING
+═══════════════════════════════════════════════════════════ */
+function setView(v){
+  currentView=v;
+  ['month','week','day'].forEach(x=>{
+    document.getElementById(`view-${x}`).classList.toggle('active',x===v);
+    document.getElementById(`vbtn-${x}`)?.classList.toggle('active',x===v);
+    document.getElementById(`tvbtn-${x}`)?.classList.toggle('active',x===v);
+  });
+  updateTopbar();
+  if(v==='month') renderMonth();
+  if(v==='week') renderWeek();
+  if(v==='day') renderDay();
+  updateStats();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PERSON FILTER
+═══════════════════════════════════════════════════════════ */
+function setPerson(key){
+  currentPerson=key;
+  document.querySelectorAll('.person-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`pbtn-${key}`)?.classList.add('active');
+  renderPersonBanner();
+  updateTopbar();
+  if(currentView==='month') renderMonth();
+  if(currentView==='week') renderWeek();
+  if(currentView==='day') renderDay();
+  updateStats();
+}
+
+function renderPersonBanner(){
+  const el=document.getElementById('personBanner');
+  if(currentPerson==='all'){ el.innerHTML=''; return; }
+  const p=PEOPLE_DEF.find(x=>x.key===currentPerson);
+  if(!p){ el.innerHTML=''; return; }
+  el.innerHTML=`<div class="person-banner">
+    <div class="pb-avatar ${p.pcls}">${p.init}</div>
+    <div class="pb-info">
+      <div class="pb-name">Viewing: ${p.name}</div>
+      <div class="pb-role">${p.role}</div>
+    </div>
+    <button class="pb-clear" onclick="setPerson('all')">Clear Filter</button>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STATS
+═══════════════════════════════════════════════════════════ */
+function updateStats(){
+  // Count tasks in current view window
+  let days=[];
+  if(currentView==='month'){
+    const last=new Date(currentYear,currentMonth+1,0).getDate();
+    for(let d=1;d<=last;d++){
+      const dt=new Date(currentYear,currentMonth,d);
+      if(isBD(dt)) days.push(dt);
+    }
+  } else if(currentView==='week'){
+    for(let i=0;i<7;i++){
+      const d=new Date(currentWeekStart.getTime()+i*86400000);
+      if(isBD(d)) days.push(d);
+    }
+  } else {
+    days=current5Days;
+  }
+
+  let total=0, payroll=0, milestones=0, hols=0;
+  for(const d of days){
+    const tasks=buildTasks(d);
+    const filtered=filterTasks(tasks);
+    const flat=Object.values(filtered).flat();
+    total+=flat.length;
+    payroll+=flat.filter(t=>t.type==='payroll').length;
+    milestones+=flat.filter(t=>t.type==='milestone').length;
+    hols+=getHols(d).length;
+  }
+
+  // Check for urgent alerts in window
+  const alertEl=document.getElementById('alertContainer');
+  const alerts=[];
+  for(const d of days){
+    const evts=PAYROLL_MAP.get(iso(d))||[];
+    for(const ev of evts){
+      if(ev.type==='CASH_DUE') alerts.push({cls:'red',icon:'🚨',title:`Cash Due — ${fmtS(d)}`,body:`Heirloom payroll funds must be in account by EOD. Pay date: ${fmtS(ev.payDate)}.`});
+      if(ev.type==='REMIND_RED') alerts.push({cls:'yellow',icon:'⚠️',title:`Payroll Cash Due Tomorrow — ${fmtS(addBD(d,1))}`,body:`Final reminder: fund Heirloom payroll account today. Pay date: ${fmtS(ev.payDate)}.`});
+    }
+  }
+  alertEl.innerHTML=alerts.map(a=>`<div class="alert-bar ${a.cls}"><div class="alert-icon">${a.icon}</div><div class="alert-content"><div class="alert-title">${a.title}</div><div class="alert-body">${a.body}</div></div></div>`).join('');
+
+  document.getElementById('heroStats').innerHTML=`
+    <div class="stat-chip sc-royal"><div class="sc-icon">📋</div><div class="sc-value">${total}</div><div class="sc-label">Total Tasks</div><div class="sc-sub">${currentView} view</div></div>
+    <div class="stat-chip sc-red"><div class="sc-icon">💵</div><div class="sc-value">${payroll}</div><div class="sc-label">Payroll Events</div><div class="sc-sub">in window</div></div>
+    <div class="stat-chip sc-navy"><div class="sc-icon">⭐</div><div class="sc-value">${milestones}</div><div class="sc-label">Milestones</div><div class="sc-sub">in window</div></div>
+    <div class="stat-chip sc-green"><div class="sc-icon">🌍</div><div class="sc-value">${hols}</div><div class="sc-label">Holiday Flags</div><div class="sc-sub">🇮🇳 🇿🇦 🇺🇸</div></div>`;
+}
+
+function updateTopbar(){
+  const pn=currentPerson==='all'?'All Team':PEOPLE_DEF.find(x=>x.key===currentPerson)?.name||'';
+  const views={month:'Month view',week:'Week view',day:'Daily view'};
+  document.getElementById('topbarTitle').textContent=`Operations Calendar`;
+  document.getElementById('topbarSub').textContent=`${pn} · ${views[currentView]}`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SIDEBAR BUILD
+═══════════════════════════════════════════════════════════ */
+function buildSidebar(){
+  // Count tasks per person for current period (rough estimate using next 5 BDs)
+  const counts={};
+  for(const p of PEOPLE_DEF){
+    if(p.key==='all'){counts[p.key]=null;continue;}
+    let c=0;
+    for(const d of current5Days){ c+=(buildTasks(d)[p.key]||[]).length; }
+    counts[p.key]=c;
+  }
+
+  const html=PEOPLE_DEF.map(p=>`
+    <button class="person-btn ${currentPerson===p.key?'active':''}" id="pbtn-${p.key}" onclick="setPerson('${p.key}')">
+      <div class="p-avatar ${p.cls}">${p.init}</div>
+      <div class="p-name">${p.name}</div>
+      ${counts[p.key]!==null?`<div class="p-badge">${counts[p.key]}</div>`:''}
+    </button>`).join('');
+  document.getElementById('personList').innerHTML=html;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════ */
+function init(){
+  const today=new Date();
+  document.getElementById('topbarDate').textContent=
+    today.toLocaleDateString('en-US',{weekday:'short',month:'long',day:'numeric',year:'numeric'});
+
+  initDateState();
+
+  // Set month to today's month if in range, else April
+  if(today.getFullYear()===2026&&today.getMonth()>=3&&today.getMonth()<=11){
+    currentMonth=today.getMonth();
+    currentYear=2026;
+  }
+
+  buildSidebar();
+  updateTopbar();
+  renderMonth();
+  updateStats();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
